@@ -51,3 +51,12 @@ app.post("/urls", (req, res) => {
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
+function generateRandomString() {
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let answer = '';
+  const len = 6;
+  for (let i = 0; i < len; i++) {
+    answer += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return answer;
+}
