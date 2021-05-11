@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
-morgan('dev');
+app.use(morgan('dev'));
 
 app.set("view engine", "ejs");
 
@@ -57,10 +57,6 @@ app.get("/urls/:shortURL", (req, res) => {
   } else {
     res.status(404).send("The short URL you have entered does not exist.");
   }
-  
-  
-  
-
 });
 
 //post request that logs the short-long URLs to the urlDatabase
