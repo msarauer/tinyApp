@@ -18,18 +18,22 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+//app begins listening on the given port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
 });
 
+//displays the urls database in JSON format
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//displays hello on the browser page
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+//renders the url database page
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase
@@ -37,20 +41,34 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//renders the form page to request a short url
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+//renders a page that shows the generated short URL and the corresponding long URL
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL,longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
 
+//post request that logs the short-long URLs to the urlDatabase
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  const longURL = req.body.longURL;  
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
+//redirects the user to the long URL from the shortURL
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+
+  res.redirect(longURL);
+});
+
+//generates a random string for the shortURL
 function generateRandomString() {
   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let answer = '';
