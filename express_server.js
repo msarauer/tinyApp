@@ -1,4 +1,4 @@
-const express = require ("express");
+const express = require("express");
 const app = express();
 const PORT = 8080; //default port 8080
 const morgan = require('morgan');
@@ -37,7 +37,7 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase
-  }
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -48,13 +48,24 @@ app.get("/urls/new", (req, res) => {
 
 //renders a page that shows the generated short URL and the corresponding long URL
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL,longURL: urlDatabase[req.params.shortURL]};
-  res.render("urls_show", templateVars);
+  if (urlDatabase[req.params.shortURL]) {
+    const templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL]
+    };
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(404).send("The short URL you have entered does not exist.");
+  }
+  
+  
+  
+
 });
 
 //post request that logs the short-long URLs to the urlDatabase
 app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL;  
+  const longURL = req.body.longURL;
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`);
@@ -62,14 +73,17 @@ app.post("/urls", (req, res) => {
 
 //redirects the user to the long URL from the shortURL
 app.get("/u/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];
-
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL]) {
+    const shortURL = req.params.shortURL;
+    const longURL = urlDatabase[shortURL];
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("The short URL you have entered does not exist.");
+  }
 });
 
 //generates a random string for the shortURL
-function generateRandomString() {
+const generateRandomString = function() {
   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let answer = '';
   const len = 6;
@@ -77,4 +91,4 @@ function generateRandomString() {
     answer += chars[Math.floor(Math.random() * chars.length)];
   }
   return answer;
-}
+};
