@@ -43,7 +43,7 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user: users[req.cookies["userID"]],
   };
   res.render("urls_index", templateVars);
 });
@@ -51,7 +51,7 @@ app.get("/urls", (req, res) => {
 //renders the form page to request a short url
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"],
+    user: users[req.cookies["userID"]],
   };
   res.render("urls_new", templateVars);
 });
@@ -59,7 +59,7 @@ app.get("/urls/new", (req, res) => {
 //renders the registration page
 app.get("/register", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"],
+    user: users[req.cookies["userID"]],
   };
   res.render("urls_register", templateVars);
 });
@@ -70,7 +70,7 @@ app.get("/urls/:shortURL", (req, res) => {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL],
-      username: req.cookies["username"],
+      user: users[req.cookies["userID"]],
     };
     res.render("urls_show", templateVars);
   } else {
@@ -117,7 +117,7 @@ app.post("/login", (req, res) => {
 
 //logout (clear cookies)
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("userID");
   res.redirect("/urls");
 });
 
@@ -125,6 +125,12 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const newUserEmail = req.body.email;
   const newUserPassword = req.body.password;
+  if (newUserPassword === "" || newUserEmail === "") {
+    return res.status(400).send("Email and Password cannot be blank.");
+  }
+  if (emailLookup(newUserEmail)) {
+    return res.status(400).send("Email aready in use.");
+  }
   const userID = generateRandomString();
   users[userID] = {
     id: userID,
@@ -146,4 +152,12 @@ const generateRandomString = function () {
     answer += chars[Math.floor(Math.random() * chars.length)];
   }
   return answer;
+};
+
+//loops through the users object to see if the email already exists
+const emailLookup = (email) => {
+  for (const user in users) {
+    if (users[user].email === email) return true;
+  }
+  return false;
 };
