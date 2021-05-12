@@ -6,7 +6,7 @@ const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 
 app.use(bodyParser.urlencoded({extended: true}));
-
+app.use(cookieParser());
 app.use(morgan('dev'));
 
 app.set("view engine", "ejs");
@@ -38,14 +38,18 @@ app.get("/hello", (req, res) => {
 //renders the url database page
 app.get("/urls", (req, res) => {
   const templateVars = {
-    urls: urlDatabase
+    urls: urlDatabase,
+    username: req.cookies['username']
   };
   res.render("urls_index", templateVars);
 });
 
 //renders the form page to request a short url
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    username: req.cookies['username']
+  };
+  res.render("urls_new", templateVars);
 });
 
 //renders a page that shows the generated short URL and the corresponding long URL
@@ -53,7 +57,8 @@ app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
     const templateVars = {
       shortURL: req.params.shortURL,
-      longURL: urlDatabase[req.params.shortURL]
+      longURL: urlDatabase[req.params.shortURL],
+      username: req.cookies['username']
     };
     res.render("urls_show", templateVars);
   } else {
@@ -88,7 +93,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 app.post('/urls/:shortURL', (req, res) => {
   const newURL = req.body.newURL;
-  urlDatabase[req.params.shortURL] = newURL
+  urlDatabase[req.params.shortURL] = newURL;
   res.redirect("/urls");
 });
 

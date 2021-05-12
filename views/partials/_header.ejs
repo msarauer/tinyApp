@@ -11,8 +11,9 @@
       </div>
     </div>
     <form class="form-inline my-1" action="/login" method="POST">
+      You are logged in as: <%= username %>.
     <div class="form-group mb-2 mx-auto">
-      <input class="form-control mr-2" type="text" name="username" style="width:200px">
+      <input class="form-control mr-2" type="text" name="username" style="width:200px" placeholder="Username">
       <button type="submit" class="btn btn-primary">Login</button>
     </div>
   </form>
