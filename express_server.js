@@ -52,6 +52,14 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+//renders the registration page
+app.get("/register", (req, res) => {
+  const templateVars = {
+    username: req.cookies["username"],
+  };
+  res.render("urls_register", templateVars);
+});
+
 //renders a page that shows the generated short URL and the corresponding long URL
 app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
@@ -97,11 +105,13 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 });
 
+//login (create a cookie)
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);
   res.redirect("/urls");
 });
 
+//logout (clear cookies)
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
