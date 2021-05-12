@@ -5,16 +5,20 @@ const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 
+//Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
+//set view engine
 app.set("view engine", "ejs");
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
+
+const users = {};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -115,6 +119,21 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
+});
+
+//register a new user and add them to the user object. Create a cookie of the new user's id
+app.post("/register", (req, res) => {
+  const newUserEmail = req.body.email;
+  const newUserPassword = req.body.password;
+  const userID = generateRandomString();
+  users[userID] = {
+    id: userID,
+    email: newUserEmail,
+    password: newUserPassword
+  };
+  console.log(users);
+  res.cookie("userID", userID);
+  res.redirect('/urls');
 });
 
 //generates a random string for the shortURL
