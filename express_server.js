@@ -1,19 +1,19 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; //default port 8080
-const morgan = require('morgan');
+const morgan = require("morgan");
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+const cookieParser = require("cookie-parser");
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b2xVn2: "http://www.lighthouselabs.ca",
+  "9sm5xK": "http://www.google.com",
 };
 
 app.get("/", (req, res) => {
@@ -39,7 +39,7 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies['username']
+    username: req.cookies["username"],
   };
   res.render("urls_index", templateVars);
 });
@@ -47,7 +47,7 @@ app.get("/urls", (req, res) => {
 //renders the form page to request a short url
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    username: req.cookies['username']
+    username: req.cookies["username"],
   };
   res.render("urls_new", templateVars);
 });
@@ -58,7 +58,7 @@ app.get("/urls/:shortURL", (req, res) => {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL],
-      username: req.cookies['username']
+      username: req.cookies["username"],
     };
     res.render("urls_show", templateVars);
   } else {
@@ -86,31 +86,32 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 //post request to delete an item from the database
-app.post('/urls/:shortURL/delete', (req, res) => {
+app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
 
-app.post('/urls/:shortURL', (req, res) => {
+app.post("/urls/:shortURL", (req, res) => {
   const newURL = req.body.newURL;
   urlDatabase[req.params.shortURL] = newURL;
   res.redirect("/urls");
 });
 
-app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username);
-  res.redirect('/urls');
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);
+  res.redirect("/urls");
 });
 
-app.post('/logout', (req, res) => {
-  res.clearCookie('username');
-  res.redirect('/urls');
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
 });
 
 //generates a random string for the shortURL
-const generateRandomString = function() {
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let answer = '';
+const generateRandomString = function () {
+  const chars =
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let answer = "";
   const len = 6;
   for (let i = 0; i < len; i++) {
     answer += chars[Math.floor(Math.random() * chars.length)];
