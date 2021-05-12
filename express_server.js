@@ -64,6 +64,14 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+//renders the login page
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies["userID"]],
+  };
+  res.render("urls_login", templateVars);
+});
+
 //renders a page that shows the generated short URL and the corresponding long URL
 app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
@@ -111,8 +119,15 @@ app.post("/urls/:shortURL", (req, res) => {
 
 //login (create a cookie)
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
+  const userID = emailLookup(req.body.email);
+  if (userID === false) {
+    return res.status(403).send("Email not found in system");
+  }
+  if (users[userID].password !== req.body.password) {
+    return res.status(403).send("Password incorrect.");
+  }
+  res.cookie("userID", userID);
+  res.redirect('/urls');
 });
 
 //logout (clear cookies)
@@ -137,7 +152,6 @@ app.post("/register", (req, res) => {
     email: newUserEmail,
     password: newUserPassword
   };
-  console.log(users);
   res.cookie("userID", userID);
   res.redirect('/urls');
 });
@@ -157,7 +171,7 @@ const generateRandomString = function () {
 //loops through the users object to see if the email already exists
 const emailLookup = (email) => {
   for (const user in users) {
-    if (users[user].email === email) return true;
+    if (users[user].email === email) return user;
   }
   return false;
 };
