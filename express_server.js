@@ -14,8 +14,8 @@ app.use(morgan("dev"));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b2xVn2: {longURL: "http://www.lighthouselabs.ca", userID: ""},
+  "9sm5xK": {longURL: "http://www.google.com", userID: ""}
 };
 
 const users = {};
@@ -50,6 +50,7 @@ app.get("/urls", (req, res) => {
 
 //renders the form page to request a short url
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies["userID"]) return res.redirect('/login');
   const templateVars = {
     user: users[req.cookies["userID"]],
   };
@@ -77,7 +78,7 @@ app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
     const templateVars = {
       shortURL: req.params.shortURL,
-      longURL: urlDatabase[req.params.shortURL],
+      longURL: urlDatabase[req.params.shortURL].longURL,
       user: users[req.cookies["userID"]],
     };
     res.render("urls_show", templateVars);
@@ -88,9 +89,11 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //post request that logs the short-long URLs to the urlDatabase
 app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL;
+  const longURLs = req.body.longURL;
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL] = {};
+  urlDatabase[shortURL].longURL = longURLs;
+  urlDatabase[shortURL].userID = req.cookies["userID"];
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -98,11 +101,10 @@ app.post("/urls", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
     const shortURL = req.params.shortURL;
-    const longURL = urlDatabase[shortURL];
-    res.redirect(longURL);
-  } else {
-    res.status(404).send("The short URL you have entered does not exist.");
+    const longURL = urlDatabase[shortURL].longURL;
+    return res.redirect(longURL);
   }
+  return res.status(404).send("The short URL you have entered does not exist.");
 });
 
 //post request to delete an item from the database
@@ -113,7 +115,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   const newURL = req.body.newURL;
-  urlDatabase[req.params.shortURL] = newURL;
+  urlDatabase[req.params.shortURL].longURL = newURL;
   res.redirect("/urls");
 });
 
