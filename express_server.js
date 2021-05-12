@@ -86,10 +86,15 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect("/urls");
 });
 
-app.post('/urls/:shortURL', (req,res) => {
+app.post('/urls/:shortURL', (req, res) => {
   const newURL = req.body.newURL;
   urlDatabase[req.params.shortURL] = newURL
   res.redirect("/urls");
+});
+
+app.post('/login', (req, res) => {
+  res.cookie('username', req.body.username);
+  res.redirect('/urls');
 });
 
 //generates a random string for the shortURL
