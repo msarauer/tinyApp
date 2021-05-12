@@ -102,6 +102,11 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
+app.post('/logout', (req, res) => {
+  res.clearCookie('username');
+  res.redirect('/urls');
+});
+
 //generates a random string for the shortURL
 const generateRandomString = function() {
   const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
