@@ -26,7 +26,10 @@ const urlDatabase = {
 const users = {};
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (!req.session.userID) {
+    return res.redirect('/login');
+  }
+  res.redirect('/urls');
 });
 
 //app begins listening on the given port
@@ -189,8 +192,6 @@ const generateRandomString = function () {
   }
   return answer;
 };
-
-
 
 //returns a new object with only links related to the specific user
 const urlsForUser = (id) => {
