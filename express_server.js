@@ -14,8 +14,8 @@ app.use(morgan("dev"));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  b2xVn2: {longURL: "http://www.lighthouselabs.ca", userID: ""},
-  "9sm5xK": {longURL: "http://www.google.com", userID: ""}
+  b2xVn2: {longURL: "http://www.lighthouselabs.ca", userID: "user1"},
+  "9sm5xK": {longURL: "http://www.google.com", userID: "user2"}
 };
 
 const users = {};
@@ -41,8 +41,11 @@ app.get("/hello", (req, res) => {
 
 //renders the url database page
 app.get("/urls", (req, res) => {
+  if (!req.cookies["userID"]) {
+    return res.status(400).send("Please login to view your short URLs.");
+  }
   const templateVars = {
-    urls: urlDatabase,
+    urls: urlsForUser(req.cookies["userID"]),
     user: users[req.cookies["userID"]],
   };
   res.render("urls_index", templateVars);
@@ -81,10 +84,9 @@ app.get("/urls/:shortURL", (req, res) => {
       longURL: urlDatabase[req.params.shortURL].longURL,
       user: users[req.cookies["userID"]],
     };
-    res.render("urls_show", templateVars);
-  } else {
-    res.status(404).send("The short URL you have entered does not exist.");
+    return res.render("urls_show", templateVars);
   }
+  return res.status(404).send("The short URL you have entered does not exist.");
 });
 
 //post request that logs the short-long URLs to the urlDatabase
@@ -109,14 +111,26 @@ app.get("/u/:shortURL", (req, res) => {
 
 //post request to delete an item from the database
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  for (const url in urlsForUser(req.cookies['userID'])) {
+    if (req.params.shortURL === url) {
+      delete urlDatabase[req.params.shortURL];
+      res.redirect("/urls");
+    }
+  }
+  return res.status(403).send("You do not have access to this url.");
 });
 
+//updates a shorturl with a new longurl
 app.post("/urls/:shortURL", (req, res) => {
   const newURL = req.body.newURL;
-  urlDatabase[req.params.shortURL].longURL = newURL;
-  res.redirect("/urls");
+  for (const url in urlsForUser(req.cookies['userID'])) {
+    if (req.params.shortURL === url) {
+      urlDatabase[req.params.shortURL].longURL = newURL;
+       return res.redirect("/urls");
+    }
+  }
+  return res.status(403).send("You do not have access to this url.");
+
 });
 
 //login (create a cookie)
@@ -176,4 +190,16 @@ const emailLookup = (email) => {
     if (users[user].email === email) return user;
   }
   return false;
+};
+
+//returns a new object with only links related to the specific user
+const urlsForUser = (id) => {
+  let ownedUrls = {};
+  const loggedInUser = id;
+  for (const url in urlDatabase) {
+    if (urlDatabase[url]["userID"] === loggedInUser) {
+      ownedUrls[url] = urlDatabase[url];
+    }
+  }
+  return ownedUrls;
 };
