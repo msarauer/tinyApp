@@ -3,13 +3,12 @@ const app = express();
 const PORT = 8080; //default port 8080
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
+const { getUserByEmail } = require('./helpers.js');
 
 //Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(cookieSession({
   name: 'session',
@@ -141,7 +140,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 //login (create a cookie)
 app.post("/login", (req, res) => {
-  const userID = emailLookup(req.body.email);
+  const userID = getUserByEmail(req.body.email, users);
   if (userID === false) {
     return res.status(403).send("Email not found in system");
   }
@@ -166,7 +165,7 @@ app.post("/register", (req, res) => {
   if (newUserPassword === "" || newUserEmail === "") {
     return res.status(400).send("Email and Password cannot be blank.");
   }
-  if (emailLookup(newUserEmail)) {
+  if (getUserByEmail(newUserEmail, users)) {
     return res.status(400).send("Email aready in use.");
   }
   const userID = generateRandomString();
@@ -191,13 +190,7 @@ const generateRandomString = function () {
   return answer;
 };
 
-//loops through the users object to see if the email already exists
-const emailLookup = (email) => {
-  for (const user in users) {
-    if (users[user].email === email) return user;
-  }
-  return false;
-};
+
 
 //returns a new object with only links related to the specific user
 const urlsForUser = (id) => {
