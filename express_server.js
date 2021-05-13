@@ -4,6 +4,7 @@ const PORT = 8080; //default port 8080
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcrypt');
 
 //Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -139,7 +140,7 @@ app.post("/login", (req, res) => {
   if (userID === false) {
     return res.status(403).send("Email not found in system");
   }
-  if (users[userID].password !== req.body.password) {
+  if (!bcrypt.compareSync(req.body.password, users[userID].password)) {
     return res.status(403).send("Password incorrect.");
   }
   res.cookie("userID", userID);
@@ -156,6 +157,7 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const newUserEmail = req.body.email;
   const newUserPassword = req.body.password;
+  const hashedPassword = bcrypt.hashSync(newUserPassword, 10);
   if (newUserPassword === "" || newUserEmail === "") {
     return res.status(400).send("Email and Password cannot be blank.");
   }
@@ -166,7 +168,7 @@ app.post("/register", (req, res) => {
   users[userID] = {
     id: userID,
     email: newUserEmail,
-    password: newUserPassword
+    password: hashedPassword
   };
   res.cookie("userID", userID);
   res.redirect('/urls');
