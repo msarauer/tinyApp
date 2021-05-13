@@ -4,12 +4,17 @@ const PORT = 8080; //default port 8080
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 
 //Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use(cookieSession({
+  name: 'session',
+  keys: ['Mitchel']
+}))
 
 //set view engine
 app.set("view engine", "ejs");
@@ -42,21 +47,21 @@ app.get("/hello", (req, res) => {
 
 //renders the url database page
 app.get("/urls", (req, res) => {
-  if (!req.cookies["userID"]) {
+  if (!req.session.userID) {
     return res.status(400).send("Please login to view your short URLs.");
   }
   const templateVars = {
-    urls: urlsForUser(req.cookies["userID"]),
-    user: users[req.cookies["userID"]],
+    urls: urlsForUser(req.session.userID),
+    user: users[req.session.userID],
   };
   res.render("urls_index", templateVars);
 });
 
 //renders the form page to request a short url
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies["userID"]) return res.redirect('/login');
+  if (!req.session.userID) return res.redirect('/login');
   const templateVars = {
-    user: users[req.cookies["userID"]],
+    user: users[req.session.userID],
   };
   res.render("urls_new", templateVars);
 });
@@ -64,7 +69,7 @@ app.get("/urls/new", (req, res) => {
 //renders the registration page
 app.get("/register", (req, res) => {
   const templateVars = {
-    user: users[req.cookies["userID"]],
+    user: users[req.session.userID],
   };
   res.render("urls_register", templateVars);
 });
@@ -72,7 +77,7 @@ app.get("/register", (req, res) => {
 //renders the login page
 app.get("/login", (req, res) => {
   const templateVars = {
-    user: users[req.cookies["userID"]],
+    user: users[req.session.userID],
   };
   res.render("urls_login", templateVars);
 });
@@ -83,7 +88,7 @@ app.get("/urls/:shortURL", (req, res) => {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
-      user: users[req.cookies["userID"]],
+      user: users[req.session.userID],
     };
     return res.render("urls_show", templateVars);
   }
@@ -96,7 +101,7 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {};
   urlDatabase[shortURL].longURL = longURLs;
-  urlDatabase[shortURL].userID = req.cookies["userID"];
+  urlDatabase[shortURL].userID = req.session.userID;
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -112,7 +117,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 //post request to delete an item from the database
 app.post("/urls/:shortURL/delete", (req, res) => {
-  for (const url in urlsForUser(req.cookies['userID'])) {
+  for (const url in urlsForUser(req.session.userID)) {
     if (req.params.shortURL === url) {
       delete urlDatabase[req.params.shortURL];
       res.redirect("/urls");
@@ -124,7 +129,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //updates a shorturl with a new longurl
 app.post("/urls/:shortURL", (req, res) => {
   const newURL = req.body.newURL;
-  for (const url in urlsForUser(req.cookies['userID'])) {
+  for (const url in urlsForUser(req.session.userID)) {
     if (req.params.shortURL === url) {
       urlDatabase[req.params.shortURL].longURL = newURL;
        return res.redirect("/urls");
@@ -143,13 +148,13 @@ app.post("/login", (req, res) => {
   if (!bcrypt.compareSync(req.body.password, users[userID].password)) {
     return res.status(403).send("Password incorrect.");
   }
-  res.cookie("userID", userID);
+  req.session.userID = userID;
   res.redirect('/urls');
 });
 
 //logout (clear cookies)
 app.post("/logout", (req, res) => {
-  res.clearCookie("userID");
+  req.session = null;
   res.redirect("/urls");
 });
 
@@ -170,7 +175,7 @@ app.post("/register", (req, res) => {
     email: newUserEmail,
     password: hashedPassword
   };
-  res.cookie("userID", userID);
+  req.session.userID = userID;
   res.redirect('/urls');
 });
 
