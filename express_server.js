@@ -11,11 +11,6 @@ const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers
 //set view engine
 app.set("view engine", "ejs");
 
-//app begins listening on the given port
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`);
-});
-
 //******* MIDDLEWARE *******//
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -55,7 +50,11 @@ app.get("/urls.json", (req, res) => {
 //renders the url database page if logged in.
 app.get("/urls", (req, res) => {
   if (!req.session.userID) {
-    return res.status(400).send("Please login to view your short URLs.");
+    const err = {
+      message: "You must be logged in to view this page!",
+      user: users[req.session.userID]
+    };
+    return res.status(400).render("urls_error", err);
   }
   const templateVars = {
     urls: urlsForUser(req.session.userID, urlDatabase),
@@ -66,11 +65,13 @@ app.get("/urls", (req, res) => {
 
 //renders the form page to request a shortURL. If not logged in, send to the login page.
 app.get("/urls/new", (req, res) => {
-  if (!req.session.userID) return res.redirect("/login");
+  if (!req.session.userID) {
+    return res.redirect("/login");
+  }
   const templateVars = {
     user: users[req.session.userID],
   };
-  res.render("urls_new", templateVars);
+  return res.render("urls_new", templateVars);
 });
 
 //renders the registration page. If already logged in, send user to /urls
@@ -109,9 +110,17 @@ app.get("/urls/:shortURL", (req, res) => {
         return res.render("urls_show", templateVars);
       }
     }
-    return res.status(403).send("You do not have access to this tiny url.");
+    const err = {
+      message: "You do not have access to this shortURL.",
+      user: users[req.session.userID]
+    };
+    return res.status(403).render("urls_error", err);
   }
-  return res.status(404).send("The short URL you have entered does not exist.");
+  const err = {
+    message: "The shortURL you have entered does not exist!",
+    user: users[req.session.userID]
+  };
+  return res.status(404).render("urls_error", err);
 });
 
 //redirects the user to the long URL from the shortURL if it exists
@@ -121,7 +130,11 @@ app.get("/u/:shortURL", (req, res) => {
     const longURL = urlDatabase[shortURL].longURL;
     return res.redirect(longURL);
   }
-  return res.status(404).send("The short URL you have entered does not exist.");
+  const err = {
+    message: "You have entered an invalid shortURL!",
+    user: users[req.session.userID]
+  };
+  return res.status(404).render("urls_error", err);
 });
 
 //post request that logs the short/long URLs to the urlDatabase if a user is logged in
@@ -134,7 +147,11 @@ app.post("/urls", (req, res) => {
     urlDatabase[shortURL].userID = req.session.userID;
     return res.redirect(`/urls/${shortURL}`);
   }
-  return res.status(403).send("You must be logged in to perform this action.");
+  const err = {
+    message: "You must be logged in to perform this action!",
+    user: users[req.session.userID]
+  };
+  return res.status(403).render("urls_error", err);
 });
 
 //post request to delete an item from the database if the logged in used is the creator of the shortURL
@@ -146,7 +163,11 @@ app.delete("/urls/:shortURL", (req, res) => {
       return res.redirect("/urls");
     }
   }
-  return res.status(403).send("You do not have access to this url.");
+  const err = {
+    message: "You do not have access to this url.",
+    user: users[req.session.userID]
+  };
+  return res.status(403).render("urls_error", err);
 });
 
 //updates a shortURL with a new longURL if the logged in used is the creator of the shortURL
@@ -158,7 +179,11 @@ app.put("/urls/:shortURL", (req, res) => {
       return res.redirect("/urls");
     }
   }
-  return res.status(403).send("You do not have access to this url.");
+  const err = {
+    message: "You do not have access to this url.",
+    user: users[req.session.userID]
+  };
+  return res.status(403).render("urls_error", err);
 });
 
 //Checks to see if the user is in the system, compares with password hash stored, 
@@ -166,10 +191,18 @@ app.put("/urls/:shortURL", (req, res) => {
 app.post("/login", (req, res) => {
   const userID = getUserByEmail(req.body.email, users);
   if (userID === false) {
-    return res.status(403).send("Email not found in system");
+    const err = {
+      message: "The email you entered was not found in our system.",
+      user: users[req.session.userID]
+    };
+    return res.status(403).render("urls_error", err);
   }
   if (!bcrypt.compareSync(req.body.password, users[userID].password)) {
-    return res.status(403).send("Password incorrect.");
+    const err = {
+      message: "You have entered an invalid password.",
+      user: users[req.session.userID]
+    };
+    return res.status(403).render("urls_error", err);
   }
   req.session.userID = userID;
   res.redirect("/urls");
@@ -187,10 +220,18 @@ app.post("/register", (req, res) => {
   const newUserPassword = req.body.password;
   const hashedPassword = bcrypt.hashSync(newUserPassword, 10);
   if (newUserPassword === "" || newUserEmail === "") {
-    return res.status(400).send("Email and Password cannot be blank.");
+    const err = {
+      message: "The email and password fields cannot be left blank.",
+      user: users[req.session.userID]
+    };
+    return res.status(400).render("urls_error", err);
   }
   if (getUserByEmail(newUserEmail, users)) {
-    return res.status(400).send("Email aready in use.");
+    const err = {
+      message: "The email address you entered is already in use.",
+      user: users[req.session.userID]
+    };
+    return res.status(400).render("urls_error", err);
   }
   const userID = generateRandomString();
   users[userID] = {
@@ -203,3 +244,7 @@ app.post("/register", (req, res) => {
 });
 
 
+//app begins listening on the given port
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}`);
+});
