@@ -63,8 +63,9 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-//renders the form page to request a shortURL. If not logged in, send to the login page.
+//renders the form page to request a shortURL.
 app.get("/urls/new", (req, res) => {
+  //If not logged in, send to the login page.
   if (!req.session.userID) {
     return res.redirect("/login");
   }
@@ -74,8 +75,9 @@ app.get("/urls/new", (req, res) => {
   return res.render("urls_new", templateVars);
 });
 
-//renders the registration page. If already logged in, send user to /urls
+//renders the registration page.
 app.get("/register", (req, res) => {
+  //If already logged in, send user to /urls
   if (req.session.userID) {
     return res.redirect("/urls");
   }
@@ -85,8 +87,9 @@ app.get("/register", (req, res) => {
   return res.render("urls_register", templateVars);
 });
 
-//renders the login page. If already logged in, send user to /urls
+//renders the login page.
 app.get("/login", (req, res) => {
+  // If already logged in, send user to /urls
   if (req.session.userID) {
     return res.redirect("/urls");
   }
@@ -99,7 +102,9 @@ app.get("/login", (req, res) => {
 //renders a page that shows the generated shortURL and the corresponding longURL if they are the creator,
 //and if a shortURL exists
 app.get("/urls/:shortURL", (req, res) => {
+  //checks if the shortURL exists
   if (urlDatabase[req.params.shortURL]) {
+    //checks if the shortURL is owned by the current user
     for (const url in urlsForUser(req.session.userID, urlDatabase)) {
       if (req.params.shortURL === url) {
         const templateVars = {
@@ -137,11 +142,13 @@ app.get("/u/:shortURL", (req, res) => {
   return res.status(404).render("urls_error", err);
 });
 
-//post request that logs the short/long URLs to the urlDatabase if a user is logged in
+//post request that logs the short/long URLs to the urlDatabase
 app.post("/urls", (req, res) => {
+  //if logged in
   if (req.session.userID) {
     const longURLs = req.body.longURL;
-    const shortURL = generateRandomString();
+    const shortURL = generateRandomString(); //assigns a random shortURL
+    //create a key for the shortURL containing the longURL and userId in the database
     urlDatabase[shortURL] = {};
     urlDatabase[shortURL].longURL = longURLs;
     urlDatabase[shortURL].userID = req.session.userID;
@@ -156,7 +163,7 @@ app.post("/urls", (req, res) => {
 
 //post request to delete an item from the database if the logged in used is the creator of the shortURL
 app.delete("/urls/:shortURL", (req, res) => {
-  console.log(urlDatabase[req.params.shortURL]);
+  //confirm the shortURL is owned by the current user
   for (const url in urlsForUser(req.session.userID, urlDatabase)) {
     if (req.params.shortURL === url) {
       delete urlDatabase[req.params.shortURL];
@@ -172,7 +179,8 @@ app.delete("/urls/:shortURL", (req, res) => {
 
 //updates a shortURL with a new longURL if the logged in used is the creator of the shortURL
 app.put("/urls/:shortURL", (req, res) => {
-  const newURL = req.body.newURL;
+  const newURL = req.body.newURL; //new longURL to replace the existing
+  //confirm the shortURL is owned by the current user
   for (const url in urlsForUser(req.session.userID, urlDatabase)) {
     if (req.params.shortURL === url) {
       urlDatabase[req.params.shortURL].longURL = newURL;
@@ -190,27 +198,27 @@ app.put("/urls/:shortURL", (req, res) => {
 //creates a cookie, sends user to /urls
 app.post("/login", (req, res) => {
   const userID = getUserByEmail(req.body.email, users);
-  if (userID === false) {
+  if (userID === false) { //checks if user is in the database
     const err = {
       message: "The email you entered was not found in our system.",
       user: users[req.session.userID]
     };
     return res.status(403).render("urls_error", err);
   }
-  if (!bcrypt.compareSync(req.body.password, users[userID].password)) {
+  if (!bcrypt.compareSync(req.body.password, users[userID].password)) { //compare the entered password to the stored hash
     const err = {
       message: "You have entered an invalid password.",
       user: users[req.session.userID]
     };
     return res.status(403).render("urls_error", err);
   }
-  req.session.userID = userID;
+  req.session.userID = userID; //create cookie
   res.redirect("/urls");
 });
 
 //logout (clears cookies), sends user to /urls
 app.post("/logout", (req, res) => {
-  req.session = null;
+  req.session = null; //clears cookies
   res.redirect("/urls");
 });
 
@@ -218,23 +226,23 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const newUserEmail = req.body.email;
   const newUserPassword = req.body.password;
-  const hashedPassword = bcrypt.hashSync(newUserPassword, 10);
-  if (newUserPassword === "" || newUserEmail === "") {
+  const hashedPassword = bcrypt.hashSync(newUserPassword, 10); //creates a hash from the password
+  if (newUserPassword === "" || newUserEmail === "") { //checks for a blank entry
     const err = {
       message: "The email and password fields cannot be left blank.",
       user: users[req.session.userID]
     };
     return res.status(400).render("urls_error", err);
   }
-  if (getUserByEmail(newUserEmail, users)) {
+  if (getUserByEmail(newUserEmail, users)) { //checks if email already exists
     const err = {
       message: "The email address you entered is already in use.",
       user: users[req.session.userID]
     };
     return res.status(400).render("urls_error", err);
   }
-  const userID = generateRandomString();
-  users[userID] = {
+  const userID = generateRandomString(); // assign a random id to the new user
+  users[userID] = { //add user to the users object
     id: userID,
     email: newUserEmail,
     password: hashedPassword,
