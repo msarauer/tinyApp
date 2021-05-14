@@ -186,7 +186,7 @@ app.put("/urls/:shortURL", (req, res) => {
   return res.status(403).render("urls_error", err);
 });
 
-//Checks to see if the user is in the system, compares with password hash stored, 
+//Checks to see if the user is in the system, compares with password hash stored,
 //creates a cookie, sends user to /urls
 app.post("/login", (req, res) => {
   const userID = getUserByEmail(req.body.email, users);
