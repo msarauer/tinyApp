@@ -5,6 +5,7 @@ const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
+const methodOverride = require("method-override");
 const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers.js");
 
 //set view engine
@@ -19,6 +20,7 @@ app.listen(PORT, () => {
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+app.use(methodOverride('_method'));
 app.use(
   cookieSession({
     name: "session",
@@ -136,7 +138,8 @@ app.post("/urls", (req, res) => {
 });
 
 //post request to delete an item from the database if the logged in used is the creator of the shortURL
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL", (req, res) => {
+  console.log(urlDatabase[req.params.shortURL]);
   for (const url in urlsForUser(req.session.userID, urlDatabase)) {
     if (req.params.shortURL === url) {
       delete urlDatabase[req.params.shortURL];
@@ -147,7 +150,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 //updates a shortURL with a new longURL if the logged in used is the creator of the shortURL
-app.post("/urls/:shortURL", (req, res) => {
+app.put("/urls/:shortURL", (req, res) => {
   const newURL = req.body.newURL;
   for (const url in urlsForUser(req.session.userID, urlDatabase)) {
     if (req.params.shortURL === url) {
